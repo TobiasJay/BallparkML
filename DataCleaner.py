@@ -1,8 +1,16 @@
 import re
 from datetime import datetime
 
+class Game(object):
+    def __init__(self, away_name, away_score, home_name, home_score, date):
+        self.away_name = away_name
+        self.away_score = away_score
+        self.home_name = home_name
+        self.home_score = home_score
+        self.date = date
 
-def parse_game(game):
+
+def parse_game(game, formatted_date):
     # Pittsburgh Pirates (4) @ Boston Red Sox (1)
     # input looks like the above string
 
@@ -20,7 +28,7 @@ def parse_game(game):
     else:
         print("No match found/error in input")
 
-    return away_name, away_score, home_name, home_score
+    return Game(away_name, away_score, home_name, home_score, formatted_date)
 
 def parse_date(date):
     # Your input string for Sunday, April 2, 2023
@@ -50,10 +58,12 @@ def main():
     # Now we want to change this long string format into a table of data
     parse_game("Pittsburgh Pirates (4) @ Boston Red Sox (1)")
     # First we split by days
+    games_by_date = {}
     for dailyContents in file_contents.split("»"):
         dailyContents = dailyContents.strip()
         linecount = 0
         formatted_date = ""
+        today_games = []
         for game in dailyContents.split("Boxscore"):
             if linecount == 0:
                 lines = game.split("\n")
@@ -61,16 +71,24 @@ def main():
                 date = lines[0]
                 firstgame = lines[1]
                 formatted_date = parse_date(date)
-                #parse_game(firstgame)
+                
+                this_game = parse_game(firstgame, formatted_date)
+                today_games.append(this_game)
                 # save date and firstgame
             else:
                 game = game.strip()
-                
+                print(game)
+                this_game = parse_game(game, formatted_date)
+                today_games.append(this_game)
                 #needs further cleaning
                 #parse_game(game)
                 # save game
 
             linecount += 1
+        games_by_date[formatted_date] = today_games
+
+    
+    print(games_by_date)
 
 
 
