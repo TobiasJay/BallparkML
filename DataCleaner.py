@@ -56,7 +56,6 @@ def main():
         file_contents = file.read()
 
     # Now we want to change this long string format into a table of data
-    parse_game("Pittsburgh Pirates (4) @ Boston Red Sox (1)")
     # First we split by days
     games_by_date = {}
     for dailyContents in file_contents.split("»"):
@@ -71,25 +70,21 @@ def main():
                 date = lines[0]
                 firstgame = lines[1]
                 formatted_date = parse_date(date)
-                
+
                 this_game = parse_game(firstgame, formatted_date)
                 today_games.append(this_game)
                 # save date and firstgame
             else:
                 game = game.strip()
-                print(game)
-                this_game = parse_game(game, formatted_date)
-                today_games.append(this_game)
-                #needs further cleaning
-                #parse_game(game)
-                # save game
+                if len(game) > 1:
+                    print(len(game))
+                    this_game = parse_game(game, formatted_date)
+                    today_games.append(this_game)
 
             linecount += 1
         games_by_date[formatted_date] = today_games
 
     
-    print(games_by_date)
-
 
 
 if __name__ == '__main__':
