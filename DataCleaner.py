@@ -10,6 +10,7 @@ class Game(object):
         self.date = date
 
 
+
 def parse_game(game, formatted_date):
     # Pittsburgh Pirates (4) @ Boston Red Sox (1)
     # input looks like the above string
@@ -77,15 +78,13 @@ def main():
             else:
                 game = game.strip()
                 if len(game) > 1:
-                    print(len(game))
                     this_game = parse_game(game, formatted_date)
                     today_games.append(this_game)
 
             linecount += 1
         games_by_date[formatted_date] = today_games
 
-    
-
+    print(games_by_date.keys())
 
 if __name__ == '__main__':
     main()
