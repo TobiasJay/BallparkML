@@ -48,7 +48,7 @@ def main():
     # Specify the path to the text file
     # text copied from https://www.baseball-reference.com/leagues/majors/2023-schedule.shtml
 
-    file_path = "data/TestScores.txt"
+    file_path = "data/RegularSeasonScores.txt"
 
 
     # Open the file in read mode
@@ -84,7 +84,7 @@ def main():
             linecount += 1
         games_by_date[formatted_date] = today_games
 
-    print(games_by_date.keys())
+    print(games_by_date['05/03/2023'])
 
 if __name__ == '__main__':
     main()
