@@ -68,3 +68,8 @@ data = {
 
 predicted_batavg = predict_batavg_last_5_games(data)
 print("Predicted 'batavg' for the last 5 games:", predicted_batavg)
+formatted_predictions = ["batavg={:.3f}".format(value) for value in predicted_batavg]
+
+# Display the formatted predictions
+for prediction in formatted_predictions:
+    print(prediction)
