@@ -27,6 +27,18 @@ def main():
     example_key = ('SEA', '2023-05-03')
     print(PitchingIndex.get(example_key))
     print(BattingIndex.get(example_key))
+    # Filter data for team 'SEA'
+    sea_batting_data = selected_bdata[selected_bdata['Team'] == 'SEA']
+
+    # Get all 'batavg' values for 'SEA'
+    sea_batavg_values = sea_batting_data['BA'].tolist()
+
+    # Alternatively, you can calculate the mean 'batavg' for 'SEA'
+    mean_sea_batavg = sea_batting_data['BA'].mean()
+
+    print("All 'batavg' values for SEA:", sea_batavg_values)
+    print("Mean 'batavg' for SEA:", mean_sea_batavg)
+
 
 if __name__ == '__main__':
     main()
