@@ -33,10 +33,9 @@ def main():
     # Drop unnecessary columns
     df = df.drop(['Result', 'Outcome', 'Scores'], axis=1)
 
-    # Train Model on 20 games at the end of the season, so 
-    # Split into Training and test data (Train on first 142 games, test on last 20 games)
-    training_games = df.head(142)
-    test_games = df.tail(20)
+    # Line 4016 in dataset marks the start of september, the last month of the season
+    training_games = df.head(4016)
+    test_games = df.tail(len(df) - 4016)
 
     # Create a dictionary with tuples (Team, Date) as keys and corresponding rows as values for train and test data
     TrainDict = {}
@@ -49,14 +48,12 @@ def main():
         key = (row['Team'], row['Date'])
         TestDict[key] = row
 
-
     # 2. Train model on training data
 
-
+    # prints SEA opponent's stats for the date 2023-10-01
+    print(TestDict.get((TestDict.get(('SEA', '2023-10-01'))['Opp'], '2023-10-01')))
     # Example: Accessing data for ('SEA', '2023-03-30')
-    example_key = ('SEA', '2023-05-03')
-    print(DataDict.get(example_key))
-    print(DataDict.get(example_key))
+
 
 if __name__ == '__main__':
     main()
