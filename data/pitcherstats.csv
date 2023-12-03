@@ -1,4 +1,4 @@
-Rk,Player,Date,Age,Team,,Opp,Result,AppDec,IP,H,R,ER,UER,HR,BB,IBB,SO,HBP,BK,WP,BF,BR,Pos,Player-additional
+Rk,Player,Date,Age,Team,,Opp,Result,AppDec,IP,H,Opp_R,ER,UER,HR,BB,IBB,SO,HBP,BK,WP,BF,BR,Pos,Player-additional
 1,Sandy Alcantara,2023-03-30,27-204,MIA,,NYM,L 3-5,GS-6,5.2,3,3,3,0,0,4,0,2,0,0,0,23,7,P,alcansa01
 2,Shane Bieber,2023-03-30,27-303,CLE,@,SEA,L 0-3,GS-6,6.0,6,0,0,0,0,0,0,3,0,0,2,23,6,P,biebesh01
 3,Corbin Burnes,2023-03-30,28-159,MIL,@,CHC,L 0-4,GS-5 L,5.0,4,4,4,0,0,3,0,3,1,0,0,23,8,P,burneco01
