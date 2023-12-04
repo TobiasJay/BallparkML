@@ -87,8 +87,37 @@ def main():
     batter_columns = ['Date', 'BA', 'Team', 'Opp'] # add more features later (HR, RBI, etc.)
     selected_bdata = b_df[batter_columns]
 
-    # Merge Datasets
+
+    # Create seasonal avg BA column
+    # Create Opp Pitcher ERA column
+    # Create Score column
+
+    # Create seasonal avg BA column
+    X = pd.DataFrame(selected_bdata.groupby('Team')['BA'].cumsum() / (selected_bdata.groupby('Team').cumcount() + 1), columns=['BA_AvgToDate'])
     
+    # Create Opp Pitcher ERA column
+
+    # Map IP to 0.0, 0.3333, 0.6667 for the ERA math to work (original values have 4.1 represent 4 innings and 1 out)
+    selected_pdata['IP'] = selected_pdata['IP'].apply(lambda x: int(x) + 1/3 if round(x % 1, 1) == 0.1 else int(x) + 2/3 if round(x % 1, 1) == 0.2 else x)
+
+    X['IP TOTAL'] = selected_pdata.groupby(['Player-additional'])['IP'].cumsum()
+    X['ERA'] = 9 * selected_pdata['ER'] / selected_pdata['IP']
+    X['ERA_cum'] = 9 * selected_pdata.groupby(['Player-additional'])['ER'].cumsum() / selected_pdata.groupby(['Player-additional'])['IP'].cumsum()
+    X['Player-additional'] = selected_pdata['Player-additional']
+    # adding column for average of BA over last 5 games
+    column_to_average = 'BA'
+    window_size = 5
+
+    # Calculate the rolling mean over the last five games
+    X['BA_AvgLast5'] = selected_bdata.groupby('Team')[column_to_average].transform(lambda x: x.rolling(window=window_size, min_periods=1).mean())
+    X['IP_Last5'] = selected_pdata.groupby(['Player-additional'])['IP'].transform(lambda x: x.rolling(window=window_size, min_periods=1).sum())
+    X['ER_Last5'] = selected_pdata.groupby(['Player-additional'])['ER'].transform(lambda x: x.rolling(window=window_size, min_periods=1).sum())
+    X['ERA_Last5'] = 9 * X['ER_Last5'] / X['IP_Last5']
+    #X['ERA_Last5'] = selected_pdata.groupby(['Player-additional'])['ERA'].transform(lambda x: x.rolling(window=window_size, min_periods=1).mean())
+    print(X.tail(60))
+    '''
+    # Merge Datasets
+    # Currently bugged
     df = pd.merge(selected_bdata, selected_pdata, how='inner', on=['Date', 'Team', 'Opp'])
 
     # Chat GPT code for converting result to number feature "W 2 - 7" => Win column, Score column, Opp_Score column
@@ -105,7 +134,7 @@ def main():
     # Drop unnecessary columns
     df = df.drop(['Result', 'Outcome', 'Scores'], axis=1)
 
-    '''
+    
     # Line 4016 in dataset marks the start of september, the last month of the season
     training_games = df.head(4016)
     test_games = df.tail(len(df) - 4016)
@@ -121,7 +150,7 @@ def main():
     y_train = y.head(4016)
     y_test = y.tail(len(y) - 4016)
     print(X_train)
-    '''
+    
     # X_train contains Date, BA, Team, Opp, IP, ER
     
     # Approach 1. Avg all season stats for each team
@@ -171,7 +200,7 @@ def main():
 
     # There are 383 unique starting pitchers in the dataset. Onehot encoding them would add that many features
     # print(stat_df['Player-additional'].nunique()) 
-
+    '''
 
 
 
