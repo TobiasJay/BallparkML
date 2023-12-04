@@ -88,7 +88,7 @@ def main():
     selected_bdata = b_df[batter_columns]
 
     # Merge Datasets
-
+    
     df = pd.merge(selected_bdata, selected_pdata, how='inner', on=['Date', 'Team', 'Opp'])
 
     # Chat GPT code for converting result to number feature "W 2 - 7" => Win column, Score column, Opp_Score column
@@ -135,26 +135,43 @@ def main():
     # Use Team BA, Opp Pitcher ERA (use team ERA if this is pitcher's first game) and skip first game of season
 
 
-
-
     # Approach 2. Modify Approach 1 to evaluate only the last 5 games for each team
 
-
+    stat_df = df.copy()
     # sets index to Date and Team so we can quickly reference stats for a given team on a given date
-    df.set_index(['Date', 'Team'], inplace=True)
+
+
+
+    # Map IP to 0.0, 0.3333, 0.6667 for the ERA math to work (original values have 4.1 represent 4 innings and 1 out)
+    stat_df['IP'] = stat_df['IP'].apply(lambda x: int(x) + 1/3 if round(x % 1, 1) == 0.1 else int(x) + 2/3 if round(x % 1, 1) == 0.2 else x)
+    stat_df['IP_Total'] = stat_df.groupby('Player-additional')['IP'].cumsum()
+    #filtered_df = stat_df[stat_df['Player-additional'] == 'weavelu01']
+    #print(filtered_df)
 
     # adding column for average of BA to date
-    df['BA_AvgToDate'] = df.groupby('Team')['BA'].cumsum() / (df.groupby('Team').cumcount() + 1)
-    df['PitcherERA_AvgToDate'] = df.groupby(['Team', 'Player-additional'])['IP'].cumsum() / (df.groupby(['Team', 'Player-additional']).cumcount() + 1)
+    stat_df['BA_AvgToDate'] = stat_df.groupby('Team')['BA'].cumsum() / (stat_df.groupby('Team').cumcount() + 1)
+    # adding column for average of ERA to date
+    stat_df['IP_Total'] = stat_df.groupby(['Team', 'Player-additional'])['IP'].cumsum()
+    stat_df['ERA_toDate'] = 9 * stat_df.groupby(['Team', 'Player-additional'])['ER'].cumsum() / stat_df.groupby(['Team', 'Player-additional'])['IP'].cumsum()
+
+    #stat_df['PitcherERA_AvgToDate'] = stat_df.groupby(['Team', 'Player-additional'])['ER'].cumsum() / (stat_df.groupby(['Team', 'Player-additional']).cumcount() + 1)
+    #stat_df['PitcherERA_AvgToDate'] = stat_df['PitcherERA_AvgToDate'] * 9 / stat_df['IP']
+
 
     # adding column for average of BA over last 5 games
     column_to_average = 'BA'
     window_size = 5
 
     # Calculate the rolling mean over the last five games
-    df['BA_AvgLast5'] = df.groupby('Team')[column_to_average].transform(lambda x: x.rolling(window=window_size, min_periods=1).mean())
+    stat_df['BA_AvgLast5'] = stat_df.groupby('Team')[column_to_average].transform(lambda x: x.rolling(window=window_size, min_periods=1).mean())
 
-    print(df.loc['2023-03-30', ...]) 
+    # adding column for average of ERA over last 5 games
+    stat_df['ERA_Last5'] = stat_df.groupby(['Team', 'Player-additional'])['ER'].transform(lambda x: x.rolling(window=window_size, min_periods=1).mean())
+    stat_df['ERA_Last5'] = stat_df['ERA_Last5'] * 9 / stat_df['IP']
+
+    # There are 383 unique starting pitchers in the dataset. Onehot encoding them would add that many features
+    # print(stat_df['Player-additional'].nunique()) 
+
 
 
 
