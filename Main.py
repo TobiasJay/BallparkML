@@ -19,7 +19,6 @@ def main():
     batter_columns = ['Date', 'BA', 'Team', 'Opp', 'Result'] # add more features later (HR, RBI, etc.)
     selected_bdata = b_df[batter_columns]
 
-
     # Create seasonal avg BA column
     # Create Opp Pitcher ERA column
     # Create Score column
@@ -97,10 +96,6 @@ def main():
     # Then we need to split into features and target (# of runs scored)
     print(X_train)
     print(X_test)
-    
-
-
-
 
 
 if __name__ == '__main__':
