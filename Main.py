@@ -6,74 +6,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 
-'''
-class Data:
-
-    def __init__(self):
-        """
-        Data class.
-
-        Attributes
-        --------------------
-            X -- numpy array of shape (n,d), features
-            y -- numpy array of shape (n,), targets
-        """
-
-        # n = number of examples, d = dimensionality
-        self.X = None
-        self.y = None
-
-        self.Xnames = None
-        self.yname = None
-
-    def load(self, filename, header=0, predict_col=-1):
-        """Load csv file into X array of features and y array of labels."""
-
-        # determine filename
-        dir = os.path.dirname(__file__)
-        f = os.path.join(dir, '..', 'data', filename)
-
-        # load data
-        with open(f, 'r') as fid:
-            data = np.loadtxt(fid, delimiter=",", skiprows=header)
-
-        # separate features and labels
-        if predict_col is None:
-            self.X = data[:,:]
-            self.y = None
-        else:
-            if data.ndim > 1:
-                self.X = np.delete(data, predict_col, axis=1)
-                self.y = data[:,predict_col]
-            else:
-                self.X = None
-                self.y = data[:]
-
-        # load feature and label names
-        if header != 0:
-            with open(f, 'r') as fid:
-                header = fid.readline().rstrip().split(",")
-
-            if predict_col is None:
-                self.Xnames = header[:]
-                self.yname = None
-            else:
-                if len(header) > 1:
-                    self.Xnames = np.delete(header, predict_col)
-                    self.yname = header[predict_col]
-                else:
-                    self.Xnames = None
-                    self.yname = header[0]
-        else:
-            self.Xnames = None
-            self.yname = None
-
-def load_data(filename, header=0, predict_col=-1):
-    """Load csv file into Data class."""
-    data = Data()
-    data.load(filename, header=header, predict_col=predict_col)
-    return data
-'''
 
 def main():
     # Read the CSV file into a pandas DataFrame
@@ -93,31 +25,35 @@ def main():
     # Create Score column
 
     # Create seasonal avg BA column
-    
+    # Doesn't include current BA value in the average
     X = pd.DataFrame((selected_bdata.groupby('Team')['BA'].cumsum() - selected_bdata['BA']) / (selected_bdata.groupby('Team').cumcount()), columns=['BA_AvgToDate'])
-    X['BA_AvgToDate'] = X['BA_AvgToDate'].fillna(0)
-    print(X.head(60))
-    # Create Opp Pitcher ERA column
+
+    # adding column for average of BA over last 5 games
+    window_size = 5
+
+    
+    # Calculate the rolling mean over the last five games (Change window function in x.rolling(window= ... )) Check documentation
+    # Find x.rolling documentation at this URL: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rolling.html
+    # closed='left' means that the window will not include the current game
+    X['BA_AvgLast5'] = selected_bdata.groupby('Team')['BA'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').mean())
 
     # Map IP to 0.0, 0.3333, 0.6667 for the ERA math to work (original values have 4.1 represent 4 innings and 1 out)
     selected_pdata['IP'] = selected_pdata['IP'].apply(lambda x: int(x) + 1/3 if round(x % 1, 1) == 0.1 else int(x) + 2/3 if round(x % 1, 1) == 0.2 else x)
 
+    # ERA is today's ER / today's IP, IP total is all IP seasonally, ERA_cum is ERA up to, but not including today
     X['IP TOTAL'] = selected_pdata.groupby(['Player-additional'])['IP'].cumsum()
     X['ERA'] = 9 * selected_pdata['ER'] / selected_pdata['IP']
-    X['ERA_cum'] = 9 * selected_pdata.groupby(['Player-additional'])['ER'].cumsum() / selected_pdata.groupby(['Player-additional'])['IP'].cumsum()
+    X['ERA_cum'] = 9 * (selected_pdata.groupby(['Player-additional'])['ER'].cumsum() - selected_pdata['ER']) / (selected_pdata.groupby(['Player-additional'])['IP'].cumsum() - selected_pdata['IP'])
     X['Player-additional'] = selected_pdata['Player-additional']
-    # adding column for average of BA over last 5 games
-    column_to_average = 'BA'
-    window_size = 5
+
 
     # Calculate the rolling mean over the last five games
-    X['BA_AvgLast5'] = selected_bdata.groupby('Team')[column_to_average].transform(lambda x: x.rolling(window=window_size, min_periods=1).mean())
-    X['IP_Last5'] = selected_pdata.groupby(['Player-additional'])['IP'].transform(lambda x: x.rolling(window=window_size, min_periods=1).sum())
-    X['ER_Last5'] = selected_pdata.groupby(['Player-additional'])['ER'].transform(lambda x: x.rolling(window=window_size, min_periods=1).sum())
+    # does not include today's ERA in calcuation
+    X['IP_Last5'] = selected_pdata.groupby(['Player-additional'])['IP'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').sum())
+    X['ER_Last5'] = selected_pdata.groupby(['Player-additional'])['ER'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').sum())
     X['ERA_Last5'] = 9 * X['ER_Last5'] / X['IP_Last5']
-    # How do we handle the offset? We can't use the ERA of the pitcher for the game we're trying to predict
-    
-    # Subtract the current game BA from the average BA
+
+    print(X.head(200))
 
 
     '''
