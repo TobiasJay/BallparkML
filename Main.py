@@ -64,7 +64,6 @@ def main():
 
 
     X1.drop_duplicates(subset=['Date', 'Team'], keep='first', inplace=True)
-    print(len(selected_bdata))
     matches = pd.merge(X1, X2, how='inner', on=['Date', 'Team'])
     matches.drop(['IP_Last5', 'ER_Last5'], axis=1, inplace=True)
     # check for duplicate rows in pd.merge
@@ -80,21 +79,24 @@ def main():
     matches[['Score', 'Opp_Score']] = matches['Scores'].str.split('-', expand=True).astype(int)
 
     # Drop unnecessary columns
-    matches = matches.drop(['Result', 'Outcome', 'Scores', 'Opp_Score'], axis=1)
-    print(matches.tail(60))
+    matches = matches.drop(['Result', 'Outcome', 'Scores', 'Opp_Score', 'ERA', 'Player-additional','Team','IP TOTAL','Win'], axis=1)
+    # Drop rows with NaN values
+    matches.dropna(inplace=True)
     
-    # Add all necessary columns to new dataframe
-    X = pd.DataFrame(matches['BA_AvgToDate', 'BA_AvgLast5', 'IP_TOTAL', 'ERA', 'ERA_cum', 'ERA_Last5', 'Win', 'Score'])
-   # drop target from X and save to y
-    y = X['Score']
-    X = X.drop(['Score'], axis=1)
+    # drop target from X and save to y
+    y = matches['Score']
+    X = matches.drop(['Score'], axis=1)
 
     # Create Training and test sets
     # Line 4016 in dataset marks the start of september, the last month of the season
-    X_train = X.head(4016)
-    X_test = X.tail(len(X) - 4016)
+    # Originally 4016 was the start of september, but we removed rows with NaN values, so the split is now at 3611
+    X_train = X.head(3611)
+    X_test = X.tail(len(X) - 3611)
+    y_train = y.head(3611)
+    y_test = y.tail(len(y) - 3611)
     # Then we need to split into features and target (# of runs scored)
     print(X_train)
+    print(X_test)
     
 
 
