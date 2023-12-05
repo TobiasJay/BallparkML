@@ -93,8 +93,10 @@ def main():
     # Create Score column
 
     # Create seasonal avg BA column
-    X = pd.DataFrame(selected_bdata.groupby('Team')['BA'].cumsum() / (selected_bdata.groupby('Team').cumcount() + 1), columns=['BA_AvgToDate'])
     
+    X = pd.DataFrame((selected_bdata.groupby('Team')['BA'].cumsum() - selected_bdata['BA']) / (selected_bdata.groupby('Team').cumcount()), columns=['BA_AvgToDate'])
+    X['BA_AvgToDate'] = X['BA_AvgToDate'].fillna(0)
+    print(X.head(60))
     # Create Opp Pitcher ERA column
 
     # Map IP to 0.0, 0.3333, 0.6667 for the ERA math to work (original values have 4.1 represent 4 innings and 1 out)
@@ -113,8 +115,11 @@ def main():
     X['IP_Last5'] = selected_pdata.groupby(['Player-additional'])['IP'].transform(lambda x: x.rolling(window=window_size, min_periods=1).sum())
     X['ER_Last5'] = selected_pdata.groupby(['Player-additional'])['ER'].transform(lambda x: x.rolling(window=window_size, min_periods=1).sum())
     X['ERA_Last5'] = 9 * X['ER_Last5'] / X['IP_Last5']
-    #X['ERA_Last5'] = selected_pdata.groupby(['Player-additional'])['ERA'].transform(lambda x: x.rolling(window=window_size, min_periods=1).mean())
-    print(X.tail(60))
+    # How do we handle the offset? We can't use the ERA of the pitcher for the game we're trying to predict
+    
+    # Subtract the current game BA from the average BA
+
+
     '''
     # Merge Datasets
     # Currently bugged
