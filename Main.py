@@ -69,42 +69,47 @@ def main():
     X1.drop_duplicates(subset=['Date', 'Team'], keep='first', inplace=True)
     # Merge pitchers and batters together into one dataframe
     matches = pd.merge(X1, X2, how='inner', on=['Date', 'Team','Opp'])
-    matches['Result'] = selected_bdata['Result']
-
-    # Create a new DataFrame to store the merged information
-    full_games = pd.DataFrame()
+    # Assuming 'matches' is your DataFrame
+    # Create an empty DataFrame to store the pairs of games
+    game_pairs = pd.DataFrame()
 
     # Iterate through unique dates in the original DataFrame
     for date in matches['Date'].unique():
         # Subset the DataFrame for the current date
         subset_df = matches[matches['Date'] == date]
+        # Iterate through rows to isolate pairs of games
+        for index, row in subset_df.iterrows():
+            # Find the corresponding row with the opposing team and only keep @ teams
 
-        # Identify the home and away teams
-        home_team = subset_df.loc[subset_df['HorA'].isna(), 'Team'].values[0]
-        away_team = subset_df.loc[subset_df['HorA'].notna(), 'Team'].values[0]
-
-        # Create a new row with merged information
-        new_row = {
-            'Date': date,
-            'HomeTeam': home_team,
-            'AwayTeam': away_team,
-            'HomeResult': subset_df.loc[subset_df['HorA'].isna(), 'Result'].values[0],
-            'H_BA_AvgToDate': subset_df.loc[subset_df['HorA'].isna(), 'BA_AvgToDate'].values[0],
-            'A_BA_AvgToDate': subset_df.loc[subset_df['HorA'].notna(), 'BA_AvgToDate'].values[0],
-            'H_BA_AvgLast5': subset_df.loc[subset_df['HorA'].isna(), 'BA_AvgLast5'].values[0],
-            'A_BA_AvgLast5': subset_df.loc[subset_df['HorA'].notna(), 'BA_AvgLast5'].values[0],
-            'H_ERA': subset_df.loc[subset_df['HorA'].isna(), 'ERA'].values[0],
-            'A_ERA': subset_df.loc[subset_df['HorA'].notna(), 'ERA'].values[0],
-            'H_ERA_cum': subset_df.loc[subset_df['HorA'].isna(), 'ERA_cum'].values[0],
-            'A_ERA_cum': subset_df.loc[subset_df['HorA'].notna(), 'ERA_cum'].values[0],
-            # Add other columns as needed
-        }
-
-        # Append the new row to the merged DataFrame
-        full_games = full_games._append(new_row, ignore_index=True)
-    
-
-    # Decode HomeResult column:
+            opposing_row = subset_df[(subset_df['Team'] == row['Opp']) & (row['HorA'] == '@')]
+            # Check if an opposing row is found
+            if not opposing_row.empty:
+                # Away = row, Home = opposing_row
+                combined_row = {
+                    'Date': date,
+                    'AwayTeam': row['Team'],
+                    'HomeTeam': opposing_row['Team'].values[0],
+                    'HomeResult': opposing_row['Result'].values[0],
+                    'H_BA_AvgToDate': opposing_row['BA_AvgToDate'].values[0],
+                    'A_BA_AvgToDate': row['BA_AvgToDate'],
+                    'H_BA_AvgLast5': opposing_row['BA_AvgLast5'].values[0],
+                    'A_BA_AvgLast5': row['BA_AvgLast5'],
+                    'H_ERA_cum': opposing_row['ERA_cum'].values[0],
+                    'A_ERA_cum': row['ERA_cum'],
+                    'H_ERA_Last5': opposing_row['ERA_Last5'].values[0],
+                    'A_ERA_Last5': row['ERA_Last5'],
+                    # Add other columns as needed
+                }                
+                # Append the combined row to the DataFrame
+                game_pairs = game_pairs._append(combined_row, ignore_index=True)
+                # Save BA 
+                # The pair of games is isolated here
+                # 'row' contains one team, 'opposing_row' contains the other
+                # Add your code here to process the pair of games if needed
+                # ...
+                
+    print(game_pairs)
+    '''
     # Extract win/loss and scores
     full_games[['Outcome', 'Scores']] = full_games['HomeResult'].str.extract(r'([WL]) (\d+-\d+)')
 
@@ -117,7 +122,6 @@ def main():
     
     # Drop unnecessary columns
     full_games.drop(['HomeResult', 'Outcome', 'Scores'], axis=1, inplace=True)
-    print(full_games.head(60))
 
     # Drop rows with NaN values
     #matches.dropna(inplace=True)
@@ -126,7 +130,7 @@ def main():
     # y = full_games['Score']
     # X = full_games.drop(['Score'], axis=1)
 
-
+    '''
     '''
     # Create Training and test sets
     # Line 4016 in dataset marks the start of september, the last month of the season
