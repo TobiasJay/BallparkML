@@ -122,7 +122,6 @@ def main():
 
     # Drop rows with NaN values
     game_pairs.dropna(inplace=True)
-    print(game_pairs.head(1693))
     # drop target from X and save to y
     y = game_pairs['H_Win']
     X = game_pairs.drop(['H_Score', 'A_Score', 'Date', 'AwayTeam','HomeTeam','H_Win'], axis=1)
@@ -131,7 +130,7 @@ def main():
     # Create Training and test sets
     # Line 4016 in dataset marks the start of september, the last month of the season
     # Originally 4016 was the start of september, but we removed rows with NaN values, so the split is now at 3611
-    # 1693 is now our magic number where september starts
+    # 1693 is now our magic number where september starts and also 81.3% of the data
     X_train = X.head(1693)
     X_test = X.tail(len(X) - 1693)
     y_train = y.head(1693)
