@@ -3,8 +3,13 @@ import numpy as np
 import os
 
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
+from sklearn.metrics import accuracy_score
+
 
 
 def main():
@@ -78,13 +83,15 @@ def main():
     matches[['Score', 'Opp_Score']] = matches['Scores'].str.split('-', expand=True).astype(int)
 
     # Drop unnecessary columns
-    matches = matches.drop(['Result', 'Outcome', 'Scores', 'Opp_Score', 'ERA', 'Player-additional','Team','IP TOTAL','Win'], axis=1)
+    matches = matches.drop(['Result','Date', 'Outcome', 'Scores', 'Opp_Score', 'ERA', 'Player-additional','Team','IP TOTAL','Win'], axis=1)
     # Drop rows with NaN values
     matches.dropna(inplace=True)
     
     # drop target from X and save to y
     y = matches['Score']
     X = matches.drop(['Score'], axis=1)
+    
+
 
     # Create Training and test sets
     # Line 4016 in dataset marks the start of september, the last month of the season
@@ -96,7 +103,86 @@ def main():
     # Then we need to split into features and target (# of runs scored)
     print(X_train)
     print(X_test)
+    # Convert the score into a binary variable using median as the threshold
+    score_threshold = y.median()
+    y_binary = (y > score_threshold).astype(int)
 
+    # Splitting the binary target into training and test sets using the same indices as for the features
+    y_train_binary = y_binary.head(3611)
+    y_test_binary = y_binary.tail(len(y_binary) - 3611)
+
+    # Instantiate and train the logistic regression model
+    logreg = LogisticRegression()
+    logreg.fit(X_train, y_train_binary)
+
+    # Predict on the test set
+    y_pred = logreg.predict(X_test)
+
+    # Evaluate the model's performance
+    accuracy = accuracy_score(y_test_binary, y_pred)
+
+    print("Testing accuracy using LR:", accuracy)
+
+    logreg.fit(X_train, y_train_binary)
+    y_pred_2 = logreg.predict(X_train)
+    accuracy2 = accuracy_score(y_train_binary, y_pred_2)
+    print("Training accuracy using LR :", accuracy2)
+  
+
+    adaboost = AdaBoostClassifier()
+
+    # 3. Train the AdaBoost model
+    adaboost.fit(X_train, y_train_binary)
+
+    # 4. Predict on the test set
+    y_pred_adaboost = adaboost.predict(X_test)
+
+    # 5. Evaluate the model's performance
+    accuracy_adaboost = accuracy_score(y_test_binary, y_pred_adaboost)
+    print("Testing accuracy using AdaBoost:", accuracy_adaboost)
+
+    # Evaluate the training accuracy
+    y_pred_adaboost_train = adaboost.predict(X_train)
+    accuracy_adaboost_train = accuracy_score(y_train_binary, y_pred_adaboost_train)
+    print("Training accuracy using AdaBoost:", accuracy_adaboost_train)
+      
+    # decision tree classifier
+    dtree = DecisionTreeClassifier()
+
+    # Train the decision tree model
+    dtree.fit(X_train, y_train_binary)
+
+    # Predict on the test set
+    y_pred_dtree = dtree.predict(X_test)
+
+    # Evaluate the model's performance
+    accuracy_dtree = accuracy_score(y_test_binary, y_pred_dtree)
+    print("Testing accuracy using Decision Tree:", accuracy_dtree)
+
+    # Optionally, evaluate the training accuracy
+    y_pred_dtree_train = dtree.predict(X_train)
+    accuracy_dtree_train = accuracy_score(y_train_binary, y_pred_dtree_train)
+    print("Training accuracy using Decision Tree:", accuracy_dtree_train)
+   
+    # Instantiate the model
+    random_forest = RandomForestClassifier(n_estimators=7, random_state=42) # You can modify these parameters
+
+   # Train the model on the training data
+    random_forest.fit(X_train, y_train_binary)
+
+    # Make predictions on the test data
+    y_pred_rf = random_forest.predict(X_test)
+
+    # Evaluate the model's performance
+    accuracy_rf = accuracy_score(y_test_binary, y_pred_rf)
+    print("Testing accuracy using Random Forest:", accuracy_rf)
+
+    y_pred_train_rf = random_forest.predict(X_train)
+
+    # Calculate accuracy on the training data
+    training_accuracy_rf = accuracy_score(y_train_binary, y_pred_train_rf)
+
+    print("Training accuracy using Random Forest:", training_accuracy_rf)
 
 if __name__ == '__main__':
     main()

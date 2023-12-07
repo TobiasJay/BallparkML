@@ -1,4 +1,4 @@
-Rk,Player,Date,Age,Team,,Opp,Result,AppDec,IP,H,R,ER,UER,HR,BB,IBB,SO,HBP,BK,WP,BF,BR,Pos,Player-additional
+Rk,Player,Date,Age,Team,,Opp,Result,AppDec,IP,H,Opp_R,ER,UER,HR,BB,IBB,SO,HBP,BK,WP,BF,BR,Pos,Player-additional
 1,Sandy Alcantara,2021-04-01,25-206,MIA,,TBR,L 0-1,GS-6,6.0,2,0,0,0,0,2,0,7,1,0,0,23,5,P,alcansa01
 2,Chris Bassitt,2021-04-01,32-038,OAK,,HOU,L 1-8,GS-6 L,5.1,4,3,3,0,0,2,0,3,1,0,0,22,7,P,bassich01
 3,Shane Bieber,2021-04-01,25-305,CLE,@,DET,L 2-3,GS-6 L,6.0,5,3,3,0,1,3,0,12,0,0,2,27,9,P,biebesh01
