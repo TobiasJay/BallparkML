@@ -4,18 +4,16 @@ import os
 
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
 
 
 
 def main():
     # Read the CSV file into a pandas DataFrame
-    p_df = pd.read_csv('data/pitcherstats.csv')
-    b_df = pd.read_csv('data/batterstats.csv')
+    p_df = pd.read_csv('data/2023_pstats.csv')
+    b_df = pd.read_csv('data/2023_bstats.csv')
 
     # Extract the required columns
     # Opp_R = Opponent Runs while pitcher was in the game
@@ -68,6 +66,7 @@ def main():
     # Using a trick here to link the opposing pitchers and the batters together
     X1.drop_duplicates(subset=['Date', 'Team'], keep='first', inplace=True)
     # Merge pitchers and batters together into one dataframe
+    X1['Result'] = selected_bdata['Result']
     matches = pd.merge(X1, X2, how='inner', on=['Date', 'Team','Opp'])
     # Assuming 'matches' is your DataFrame
     # Create an empty DataFrame to store the pairs of games
@@ -108,121 +107,63 @@ def main():
                 # Add your code here to process the pair of games if needed
                 # ...
                 
-    print(game_pairs)
-    '''
     # Extract win/loss and scores
-    full_games[['Outcome', 'Scores']] = full_games['HomeResult'].str.extract(r'([WL]) (\d+-\d+)')
+    game_pairs[['Outcome', 'Scores']] = game_pairs['HomeResult'].str.extract(r'([WL]) (\d+-\d+)')
 
     # Create binary column for win (1) and loss (0)
-    full_games['H_Win'] = (full_games['Outcome'] == 'W').astype(int)
+    game_pairs['H_Win'] = (game_pairs['Outcome'] == 'W').astype(int)
 
     # Split the Scores column into two separate columns
-    full_games[['H_Score', 'A_Score']] = full_games['Scores'].str.split('-', expand=True).astype(int)
+    game_pairs[['H_Score', 'A_Score']] = game_pairs['Scores'].str.split('-', expand=True).astype(int)
     
     
     # Drop unnecessary columns
-    full_games.drop(['HomeResult', 'Outcome', 'Scores'], axis=1, inplace=True)
+    game_pairs.drop(['HomeResult', 'Outcome', 'Scores'], axis=1, inplace=True)
 
     # Drop rows with NaN values
-    #matches.dropna(inplace=True)
-
+    game_pairs.dropna(inplace=True)
+    print(game_pairs.head(1693))
     # drop target from X and save to y
-    # y = full_games['Score']
-    # X = full_games.drop(['Score'], axis=1)
+    y = game_pairs['H_Win']
+    X = game_pairs.drop(['H_Score', 'A_Score', 'Date', 'AwayTeam','HomeTeam','H_Win'], axis=1)
 
-    '''
-    '''
+    
     # Create Training and test sets
     # Line 4016 in dataset marks the start of september, the last month of the season
     # Originally 4016 was the start of september, but we removed rows with NaN values, so the split is now at 3611
-    X_train = X.head(3611)
-    X_test = X.tail(len(X) - 3611)
-    y_train = y.head(3611)
-    y_test = y.tail(len(y) - 3611)
+    # 1693 is now our magic number where september starts
+    X_train = X.head(1693)
+    X_test = X.tail(len(X) - 1693)
+    y_train = y.head(1693)
+    y_test = y.tail(len(y) - 1693)
     # Then we need to split into features and target (# of runs scored)
-    print(X_train)
-    print(X_test)
-    # Convert the score into a binary variable using median as the threshold
-    score_threshold = y.median()
-    y_binary = (y > score_threshold).astype(int)
-
-    # Splitting the binary target into training and test sets using the same indices as for the features
-    y_train_binary = y_binary.head(3611)
-    y_test_binary = y_binary.tail(len(y_binary) - 3611)
-
-    # Instantiate and train the logistic regression model
-    logreg = LogisticRegression()
-    logreg.fit(X_train, y_train_binary)
-
-    # Predict on the test set
-    y_pred = logreg.predict(X_test)
-
-    # Evaluate the model's performance
-    accuracy = accuracy_score(y_test_binary, y_pred)
-
-    print("Testing accuracy using LR:", accuracy)
-
-    logreg.fit(X_train, y_train_binary)
-    y_pred_2 = logreg.predict(X_train)
-    accuracy2 = accuracy_score(y_train_binary, y_pred_2)
-    print("Training accuracy using LR :", accuracy2)
-  
-
-    adaboost = AdaBoostClassifier()
+    adaboost = AdaBoostClassifier(n_estimators=10)
 
     # 3. Train the AdaBoost model
-    adaboost.fit(X_train, y_train_binary)
+    adaboost.fit(X_train, y_train)
 
     # 4. Predict on the test set
     y_pred_adaboost = adaboost.predict(X_test)
 
     # 5. Evaluate the model's performance
-    accuracy_adaboost = accuracy_score(y_test_binary, y_pred_adaboost)
+    accuracy_adaboost = accuracy_score(y_test, y_pred_adaboost)
     print("Testing accuracy using AdaBoost:", accuracy_adaboost)
 
     # Evaluate the training accuracy
     y_pred_adaboost_train = adaboost.predict(X_train)
-    accuracy_adaboost_train = accuracy_score(y_train_binary, y_pred_adaboost_train)
+    accuracy_adaboost_train = accuracy_score(y_train, y_pred_adaboost_train)
     print("Training accuracy using AdaBoost:", accuracy_adaboost_train)
-      
-    # decision tree classifier
-    dtree = DecisionTreeClassifier()
+    
 
-    # Train the decision tree model
-    dtree.fit(X_train, y_train_binary)
+    # Create SVM model
+    svm = SVC(kernel='linear')
+    svm.fit(X_train, y_train)
+    y_pred_svm = svm.predict(X_test)
+    accuracy_svm = accuracy_score(y_test, y_pred_svm)
+    print("Testing accuracy using SVM:", accuracy_svm)
+    training_accuracy_svm = accuracy_score(y_train, svm.predict(X_train))
+    print("Training accuracy using SVM:", training_accuracy_svm)
 
-    # Predict on the test set
-    y_pred_dtree = dtree.predict(X_test)
-
-    # Evaluate the model's performance
-    accuracy_dtree = accuracy_score(y_test_binary, y_pred_dtree)
-    print("Testing accuracy using Decision Tree:", accuracy_dtree)
-
-    # Optionally, evaluate the training accuracy
-    y_pred_dtree_train = dtree.predict(X_train)
-    accuracy_dtree_train = accuracy_score(y_train_binary, y_pred_dtree_train)
-    print("Training accuracy using Decision Tree:", accuracy_dtree_train)
-   
-    # Instantiate the model
-    random_forest = RandomForestClassifier(n_estimators=7, random_state=42) # You can modify these parameters
-
-   # Train the model on the training data
-    random_forest.fit(X_train, y_train_binary)
-
-    # Make predictions on the test data
-    y_pred_rf = random_forest.predict(X_test)
-
-    # Evaluate the model's performance
-    accuracy_rf = accuracy_score(y_test_binary, y_pred_rf)
-    print("Testing accuracy using Random Forest:", accuracy_rf)
-
-    y_pred_train_rf = random_forest.predict(X_train)
-
-    # Calculate accuracy on the training data
-    training_accuracy_rf = accuracy_score(y_train_binary, y_pred_train_rf)
-
-    print("Training accuracy using Random:", training_accuracy_rf)
-    '''
 
 if __name__ == '__main__':
     main()
