@@ -182,7 +182,7 @@ def main():
     # Calculate accuracy on the training data
     training_accuracy_rf = accuracy_score(y_train_binary, y_pred_train_rf)
 
-    print("Training accuracy using Random Forest:", training_accuracy_rf)
+    print("Training accuracy using Random:", training_accuracy_rf)
 
 if __name__ == '__main__':
     main()
