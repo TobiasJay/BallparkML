@@ -69,9 +69,8 @@ def main():
     X1.drop_duplicates(subset=['Date', 'Team'], keep='first', inplace=True)
     # Merge pitchers and batters together into one dataframe
     matches = pd.merge(X1, X2, how='inner', on=['Date', 'Team','Opp'])
-
     matches['Result'] = selected_bdata['Result']
-    
+
     # Create a new DataFrame to store the merged information
     full_games = pd.DataFrame()
 
@@ -104,26 +103,28 @@ def main():
         # Append the new row to the merged DataFrame
         full_games = full_games._append(new_row, ignore_index=True)
     
-    print(full_games.head(60))
+
+    # Decode HomeResult column:
     # Extract win/loss and scores
-    matches[['Outcome', 'Scores']] = matches['Result'].str.extract(r'([WL]) (\d+-\d+)')
+    full_games[['Outcome', 'Scores']] = full_games['HomeResult'].str.extract(r'([WL]) (\d+-\d+)')
 
     # Create binary column for win (1) and loss (0)
-    matches['Win'] = (matches['Outcome'] == 'W').astype(int)
+    full_games['H_Win'] = (full_games['Outcome'] == 'W').astype(int)
 
     # Split the Scores column into two separate columns
-    matches[['Score', 'Opp_Score']] = matches['Scores'].str.split('-', expand=True).astype(int)
+    full_games[['H_Score', 'A_Score']] = full_games['Scores'].str.split('-', expand=True).astype(int)
+    
+    
     # Drop unnecessary columns
+    full_games.drop(['HomeResult', 'Outcome', 'Scores'], axis=1, inplace=True)
+    print(full_games.head(60))
 
-
-
-    #matches = matches.drop(['Result', 'Outcome', 'Scores', 'Opp_Score', 'ERA', 'Player-additional','Team','IP TOTAL','Win'], axis=1)
     # Drop rows with NaN values
     #matches.dropna(inplace=True)
 
     # drop target from X and save to y
-    y = matches['Score']
-    X = matches.drop(['Score'], axis=1)
+    # y = full_games['Score']
+    # X = full_games.drop(['Score'], axis=1)
 
 
     '''
