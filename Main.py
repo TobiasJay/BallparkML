@@ -22,29 +22,30 @@ def main():
     batter_columns = ['Date', 'BA', 'Team', 'Opp', 'Result', 'Unnamed: 3', 'OPS'] # add more features later (HR, RBI, etc.)
     selected_bdata = b_df[batter_columns]
 
-    # Create seasonal avg BA column
-    # Create Opp Pitcher ERA column
-    # Create Score column
 
-    # Create seasonal avg BA column
-    # Doesn't include current BA value in the average
+    # Initialize empty DataFrame for batters and save date for reference
     X1 = pd.DataFrame(selected_bdata['Date'])
     X1['Opp'] = selected_bdata['Opp']
-    X1['HorA'] = selected_bdata['Unnamed: 3']
-    
+    X1['HorA'] = selected_bdata['Unnamed: 3'] # Finds the column indicating who is @ home
+    # Doesn't include current BA value in the average (due to the subtraction of BA))
     X1['BA_AvgToDate'] = (selected_bdata.groupby('Team')['BA'].cumsum() - selected_bdata['BA']) / (selected_bdata.groupby('Team').cumcount())
+    
     # adding column for average of BA over last 5 games
+    # Also doesn't include current BA value 
     window_size = 5
 
-    
     # Calculate the rolling mean over the last five games (Change window function in x.rolling(window= ... )) Check documentation
     # Find x.rolling documentation at this URL: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rolling.html
+    # right now its set to an integer so its just a flat average of the last 5 games
     # closed='left' means that the window will not include the current game
     X1['BA_AvgLast5'] = selected_bdata.groupby('Team')['BA'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').mean())
     X1['Team'] = selected_bdata['Team']
+
+
     # Map IP to 0.0, 0.3333, 0.6667 for the ERA math to work (original values have 4.1 represent 4 innings and 1 out)
     selected_pdata['IP'] = selected_pdata['IP'].apply(lambda x: int(x) + 1/3 if round(x % 1, 1) == 0.1 else int(x) + 2/3 if round(x % 1, 1) == 0.2 else x)
 
+    # Initialize empty DataFrame for pitchers and save date for reference
     X2 = pd.DataFrame(selected_pdata['Date'])
     X2['Team'] = selected_pdata['Team']
     X2['Opp'] = selected_pdata['Opp']
@@ -63,13 +64,13 @@ def main():
     X2['ERA_Last5'] = 9 * X2['ER_Last5'] / X2['IP_Last5']
     X2.drop(['IP_Last5', 'ER_Last5'], axis=1, inplace=True)
 
-    # Using a trick here to link the opposing pitchers and the batters together
+    # Merge pitchers and batters together into one dataframe, need to drop duplicates from X1 aka batters because there are some games with no starting pitcher
     X1.drop_duplicates(subset=['Date', 'Team'], keep='first', inplace=True)
-    # Merge pitchers and batters together into one dataframe
-    X1['Result'] = selected_bdata['Result']
+    X1['Result'] = selected_bdata['Result'] # Result for pitchers is different than game result for the team, so we get result from batting dataset
     matches = pd.merge(X1, X2, how='inner', on=['Date', 'Team','Opp'])
-    # Assuming 'matches' is your DataFrame
-    # Create an empty DataFrame to store the pairs of games
+
+
+    # Initialize empty DataFrame for new dataset that condenses each game into a single row (original dataset has a row for each team so two per game)
     game_pairs = pd.DataFrame()
 
     # Iterate through unique dates in the original DataFrame
@@ -78,7 +79,7 @@ def main():
         subset_df = matches[matches['Date'] == date]
         # Iterate through rows to isolate pairs of games
         for index, row in subset_df.iterrows():
-            # Find the corresponding row with the opposing team and only keep @ teams
+            # Find the corresponding row with the opposing team and only keep the rows for teams that played away. (aka with the @ symbol)
 
             opposing_row = subset_df[(subset_df['Team'] == row['Opp']) & (row['HorA'] == '@')]
             # Check if an opposing row is found
@@ -97,30 +98,26 @@ def main():
                     'A_ERA_cum': row['ERA_cum'],
                     'H_ERA_Last5': opposing_row['ERA_Last5'].values[0],
                     'A_ERA_Last5': row['ERA_Last5'],
-                    # Add other columns as needed
                 }                
                 # Append the combined row to the DataFrame
                 game_pairs = game_pairs._append(combined_row, ignore_index=True)
-                # Save BA 
-                # The pair of games is isolated here
-                # 'row' contains one team, 'opposing_row' contains the other
-                # Add your code here to process the pair of games if needed
-                # ...
-                
+
+
+    # Change the result column to a binary column for win (1) and loss (0) as well as keeping the scores
     # Extract win/loss and scores
     game_pairs[['Outcome', 'Scores']] = game_pairs['HomeResult'].str.extract(r'([WL]) (\d+-\d+)')
 
-    # Create binary column for win (1) and loss (0)
+    # Create binary column for win (1) and loss (0) for the home team
     game_pairs['H_Win'] = (game_pairs['Outcome'] == 'W').astype(int)
 
-    # Split the Scores column into two separate columns
+    # Split the Scores column into two separate columns for home and away scores
     game_pairs[['H_Score', 'A_Score']] = game_pairs['Scores'].str.split('-', expand=True).astype(int)
-    
     
     # Drop unnecessary columns
     game_pairs.drop(['HomeResult', 'Outcome', 'Scores'], axis=1, inplace=True)
 
     # Drop rows with NaN values
+    # This effectively eliminates data from our dataset, but our other options for sourcing data were not viable for our timeframe
     game_pairs.dropna(inplace=True)
     # drop target from X and save to y
     y = game_pairs['H_Win']
@@ -130,11 +127,14 @@ def main():
     # Create Training and test sets
     # Line 4016 in dataset marks the start of september, the last month of the season
     # Originally 4016 was the start of september, but we removed rows with NaN values, so the split is now at 3611
-    # 1693 is now our magic number where september starts and also 81.3% of the data
+    # 1693 is now our magic number where september starts and also 81.3% of the data after condensing the games pairs into single rows
     X_train = X.head(1693)
     X_test = X.tail(len(X) - 1693)
     y_train = y.head(1693)
     y_test = y.tail(len(y) - 1693)
+
+    # ======================= Train Models =======================
+
     # Then we need to split into features and target (# of runs scored)
     adaboost = AdaBoostClassifier(n_estimators=10)
 
