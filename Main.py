@@ -24,11 +24,11 @@ def main():
 
 
     # Initialize empty DataFrame for batters and save date for reference
-    X1 = pd.DataFrame(selected_bdata['Date'])
-    X1['Opp'] = selected_bdata['Opp']
-    X1['HorA'] = selected_bdata['Unnamed: 3'] # Finds the column indicating who is @ home
+    batters = pd.DataFrame(selected_bdata['Date'])
+    batters['Opp'] = selected_bdata['Opp']
+    batters['HorA'] = selected_bdata['Unnamed: 3'] # Finds the column indicating who is @ home
     # Doesn't include current BA value in the average (due to the subtraction of BA))
-    X1['BA_AvgToDate'] = (selected_bdata.groupby('Team')['BA'].cumsum() - selected_bdata['BA']) / (selected_bdata.groupby('Team').cumcount())
+    batters['BA_AvgToDate'] = (selected_bdata.groupby('Team')['BA'].cumsum() - selected_bdata['BA']) / (selected_bdata.groupby('Team').cumcount())
     
     # adding column for average of BA over last 5 games
     # Also doesn't include current BA value 
@@ -38,36 +38,36 @@ def main():
     # Find x.rolling documentation at this URL: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.rolling.html
     # right now its set to an integer so its just a flat average of the last 5 games
     # closed='left' means that the window will not include the current game
-    X1['BA_AvgLast5'] = selected_bdata.groupby('Team')['BA'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').mean())
-    X1['Team'] = selected_bdata['Team']
+    batters['BA_AvgLast5'] = selected_bdata.groupby('Team')['BA'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').mean())
+    batters['Team'] = selected_bdata['Team']
 
 
     # Map IP to 0.0, 0.3333, 0.6667 for the ERA math to work (original values have 4.1 represent 4 innings and 1 out)
     selected_pdata['IP'] = selected_pdata['IP'].apply(lambda x: int(x) + 1/3 if round(x % 1, 1) == 0.1 else int(x) + 2/3 if round(x % 1, 1) == 0.2 else x)
 
     # Initialize empty DataFrame for pitchers and save date for reference
-    X2 = pd.DataFrame(selected_pdata['Date'])
-    X2['Team'] = selected_pdata['Team']
-    X2['Opp'] = selected_pdata['Opp']
+    pitchers = pd.DataFrame(selected_pdata['Date'])
+    pitchers['Team'] = selected_pdata['Team']
+    pitchers['Opp'] = selected_pdata['Opp']
 
     # ERA is today's ER / today's IP, IP total is all IP seasonally, ERA_cum is ERA up to, but not including today
-    X2['IP TOTAL'] = selected_pdata.groupby(['Player-additional'])['IP'].cumsum()
-    X2['ERA'] = 9 * selected_pdata['ER'] / selected_pdata['IP']
-    X2['ERA_cum'] = 9 * (selected_pdata.groupby(['Player-additional'])['ER'].cumsum() - selected_pdata['ER']) / (selected_pdata.groupby(['Player-additional'])['IP'].cumsum() - selected_pdata['IP'])
-    X2['Player-additional'] = selected_pdata['Player-additional']
+    pitchers['IP TOTAL'] = selected_pdata.groupby(['Player-additional'])['IP'].cumsum()
+    pitchers['ERA'] = 9 * selected_pdata['ER'] / selected_pdata['IP']
+    pitchers['ERA_cum'] = 9 * (selected_pdata.groupby(['Player-additional'])['ER'].cumsum() - selected_pdata['ER']) / (selected_pdata.groupby(['Player-additional'])['IP'].cumsum() - selected_pdata['IP'])
+    pitchers['Player-additional'] = selected_pdata['Player-additional']
 
 
     # Calculate the rolling mean over the last five games
     # does not include today's ERA in calcuation
-    X2['IP_Last5'] = selected_pdata.groupby(['Player-additional'])['IP'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').sum())
-    X2['ER_Last5'] = selected_pdata.groupby(['Player-additional'])['ER'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').sum())
-    X2['ERA_Last5'] = 9 * X2['ER_Last5'] / X2['IP_Last5']
-    X2.drop(['IP_Last5', 'ER_Last5'], axis=1, inplace=True)
+    pitchers['IP_Last5'] = selected_pdata.groupby(['Player-additional'])['IP'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').sum())
+    pitchers['ER_Last5'] = selected_pdata.groupby(['Player-additional'])['ER'].transform(lambda x: x.rolling(window=window_size, min_periods=1,closed='left').sum())
+    pitchers['ERA_Last5'] = 9 * pitchers['ER_Last5'] / pitchers['IP_Last5']
+    pitchers.drop(['IP_Last5', 'ER_Last5'], axis=1, inplace=True)
 
-    # Merge pitchers and batters together into one dataframe, need to drop duplicates from X1 aka batters because there are some games with no starting pitcher
-    X1.drop_duplicates(subset=['Date', 'Team'], keep='first', inplace=True)
-    X1['Result'] = selected_bdata['Result'] # Result for pitchers is different than game result for the team, so we get result from batting dataset
-    matches = pd.merge(X1, X2, how='inner', on=['Date', 'Team','Opp'])
+    # Merge pitchers and batters together into one dataframe, need to drop duplicates from batters aka batters because there are some games with no starting pitcher
+    batters.drop_duplicates(subset=['Date', 'Team'], keep='first', inplace=True)
+    batters['Result'] = selected_bdata['Result'] # Result for pitchers is different than game result for the team, so we get result from batting dataset
+    matches = pd.merge(batters, pitchers, how='inner', on=['Date', 'Team','Opp'])
 
 
     # Initialize empty DataFrame for new dataset that condenses each game into a single row (original dataset has a row for each team so two per game)
