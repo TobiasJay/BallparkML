@@ -121,9 +121,11 @@ def preprocess(p_df, b_df):
     
 
 def main():
+    season = '2023'
+
     # Read the CSV file into a pandas DataFrame
-    p_df = pd.read_csv('data/2023_pstats.csv')
-    b_df = pd.read_csv('data/2023_bstats.csv')
+    p_df = pd.read_csv('data/' + season + '_pstats.csv')
+    b_df = pd.read_csv('data/' + season + '_bstats.csv')
 
     # ======================= Preprocess Data =======================
     X, y = preprocess(p_df, b_df)
