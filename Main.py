@@ -8,14 +8,9 @@ from sklearn import metrics
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
 
-
-
-def main():
-    # Read the CSV file into a pandas DataFrame
-    p_df = pd.read_csv('data/2023_pstats.csv')
-    b_df = pd.read_csv('data/2023_bstats.csv')
-
-    # Extract the required columns
+# Performs preprocessing on the datasets and returns the X and y datasets ready for use in modelling
+def preprocess(p_df, b_df):
+        # Extract the required columns
     # Opp_R = Opponent Runs while pitcher was in the game
     pitcher_columns = ['Date', 'Player-additional', 'IP', 'Opp_R', 'ER', 'Team', 'Opp', 'Result', 'Unnamed: 5'] # add more features later
     selected_pdata = p_df[pitcher_columns]
@@ -122,7 +117,16 @@ def main():
     # drop target from X and save to y
     y = game_pairs['H_Win']
     X = game_pairs.drop(['H_Score', 'A_Score', 'Date', 'AwayTeam','HomeTeam','H_Win'], axis=1)
+    return X, y
+    
 
+def main():
+    # Read the CSV file into a pandas DataFrame
+    p_df = pd.read_csv('data/2023_pstats.csv')
+    b_df = pd.read_csv('data/2023_bstats.csv')
+
+    # ======================= Preprocess Data =======================
+    X, y = preprocess(p_df, b_df)
     
     # Create Training and test sets
     # Line 4016 in dataset marks the start of september, the last month of the season
