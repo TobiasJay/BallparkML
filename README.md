@@ -1,6 +1,8 @@
 # Predicting MLB Games
 Chai-team: Toby, Devarsh, Harsh
 
+This is a class project from a ML class that I have expanded occasionally throughout my second semester. Still doesn't work as well as I'd like it to. I want to try implementing an ELO system this year to see if I can achieve better predictions.
+
 Most of main does preprocessing. Models are run at the end at the ====== Train Models ======= section (line 136)
 
 The season, (2023, 2022 or 2021) can be changed on line 124. Simply change the variable season to match the desired date year. Currently the dataset contains only 2021 through 2023.
