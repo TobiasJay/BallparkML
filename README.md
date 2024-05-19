@@ -1,7 +1,8 @@
 # Predicting MLB Games
-Chai-team: Toby, Devarsh, Harsh
 
-This is a class project from a ML class that I have expanded occasionally throughout my second semester. Still doesn't work as well as I'd like it to. I want to try implementing an ELO system this year to see if I can achieve better predictions.
+This was originally a class project from a ML class that I have expanded occasionally throughout my second semester. Currently working to improve predictions using an ELO model inspired by video game ranked systems. It is much simpler, or will start out much simpler. I will only compare wins and losses by teams and stats will not be considered.
+
+Next steps could also involve a scraper to get the data during the current season. I don't want to manually copy the data from a website.
 
 Most of main does preprocessing. Models are run at the end at the ====== Train Models ======= section (line 136)
 
